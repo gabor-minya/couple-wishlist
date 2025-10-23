@@ -1,0 +1,32 @@
+
+###> symfony/framework-bundle ###
+/.env
+/.env.dev
+/.env.local
+/.env.local.php
+/.env.*.local
+/config/secrets/prod/prod.decrypt.private.php
+/public/bundles/
+/var/
+/vendor
+###< symfony/frame
+
+# Symfony Docker / Build artifacts
+/node_modules/
+/docker/db/data/
+/docker/php/var/
+/docker/caddy/data/
+/docker/caddy/config/
+
+# Docker
+.env.local
+.env.override
+.env.prod.local
+.env.dev.local
+
+# Cache / Logs
+/.phpunit.result.cache
+/.symfony
+/.idea
+/.vscode
+*.log
