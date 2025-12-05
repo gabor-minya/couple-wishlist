@@ -1,0 +1,47 @@
+{% extends 'base.html.twig' %}
+{% block title %}Dashboard — Wishlist{% endblock %}
+
+{% block body %}
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-2xl font-bold">People</h1>
+        <a href="{{ path('person_new') }}" class="bg-indigo-600 text-white px-4 py-2 rounded">Add Person</a>
+    </div>
+
+    <div class="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+        {% for person in people %}
+            <div class="bg-white rounded-lg shadow hover:shadow-md transition p-4">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h2 class="text-lg font-semibold">{{ person.name }}</h2>
+                        <div class="text-sm text-gray-500 mt-1">
+                            {{ person.items|length }} items • Last: {{ person.lastModifiedAt ? person.lastModifiedAt|date('Y.m.d H:i') : person.createdAt|date('Y.m.d H:i') }}
+                        </div>
+                    </div>
+
+                    <div class="text-right">
+                        {% if person.isOnHold %}
+                            <span class="inline-flex items-center px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded">On hold</span>
+                        {% endif %}
+                        <div class="mt-3">
+                            <a href="{{ path('person_show', {'id': person.id}) }}" class="text-indigo-600 text-sm">Open →</a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                    <div class="flex gap-2">
+                        <a href="{{ path('person_edit', {'id': person.id}) }}" class="text-sm text-gray-600">Edit</a>
+                        <form action="{{ path('person_toggle_hold', {'id': person.id}) }}" method="post" class="inline">
+                            <input type="hidden" name="_token" value="{{ csrf_token('toggle-hold' ~ person.id) }}">
+                            <button type="submit" class="text-sm text-gray-600">
+                                {% if person.isOnHold %}Unfreeze{% else %}Freeze{% endif %}
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            <p>No people yet.</p>
+        {% endfor %}
+    </div>
+{% endblock %}

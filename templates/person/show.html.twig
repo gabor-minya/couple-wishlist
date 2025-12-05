@@ -1,0 +1,79 @@
+{% extends 'base.html.twig' %}
+{% block title %}{{ person.name }} — Wishlist{% endblock %}
+
+{% block body %}
+    <div class="mb-4">
+        <h1 class="text-2xl font-bold">{{ person.name }}</h1>
+        {% if person.isOnHold %}
+            <div class="mt-3 p-3 bg-yellow-50 border-l-4 border-yellow-300 text-yellow-800 rounded">
+                This person's wishlist is currently ON HOLD — do not buy anything right now.
+            </div>
+        {% endif %}
+    </div>
+
+    <div class="mb-4 flex justify-between items-center">
+        <div>
+            <a href="{{ path('person_add_item', {'id': person.id}) }}" class="bg-green-600 text-white px-3 py-2 rounded">Add item</a>
+            <a href="{{ path('person_trash', {'id': person.id}) }}" class="ml-2 text-sm text-red-600">Trash</a>
+        </div>
+
+        <div>
+            <button id="toggleView" class="text-sm px-3 py-2 border rounded">Toggle view</button>
+        </div>
+    </div>
+
+    <div id="itemsGrid" class="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
+        {% set hasItems = false %}
+        {% for item in person.items %}
+            {% if item.deletedAt is null %}
+                {% set hasItems = true %}
+                <div class="bg-white rounded-lg shadow p-4 flex flex-col">
+                    {% if item.imageUrl %}
+                        <img src="{{ item.imageUrl }}" alt="{{ item.name }}" class="h-40 w-full object-cover rounded mb-3">
+                    {% endif %}
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h3 class="font-semibold">{{ item.name }}</h3>
+                            <div class="text-sm text-gray-500">{{ item.note }}</div>
+                        </div>
+                        <div class="text-right">
+                            {% if item.price %}
+                                <div class="font-medium">{{ item.price }} {{ item.currency|default('USD') }}</div>
+                            {% endif %}
+                            <div class="text-xs mt-1">
+                                <span class="px-2 py-1 rounded text-white text-xs
+                                  {% if item.priority == 'high' %}bg-red-500{% elseif item.priority == 'medium' %}bg-yellow-500{% elseif item.priority == 'low' %}bg-green-500{% else %}bg-gray-400{% endif %}">
+                                  {{ item.priority|capitalize }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-3 flex justify-between items-center">
+                        <div class="text-sm text-gray-500">{{ item.addedAt|date('Y.m.d') }}</div>
+                        <div class="flex items-center gap-2">
+                            <a href="{{ path('item_edit', {'id': item.id}) }}" class="text-sm text-indigo-600">Edit</a>
+                            <form action="{{ path('item_delete', {'id': item.id}) }}" method="post" class="inline">
+                                <input type="hidden" name="_token" value="{{ csrf_token('delete-item' ~ item.id) }}">
+                                <button type="submit" class="text-sm text-red-600">Delete</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        {% endfor %}
+
+        {% if not hasItems %}
+            <p>No items yet.</p>
+        {% endif %}
+    </div>
+
+    <script>
+        document.getElementById('toggleView').addEventListener('click', function(){
+            const grid = document.getElementById('itemsGrid');
+            grid.classList.toggle('grid-cols-1');
+            grid.classList.toggle('grid-cols-3');
+        });
+    </script>
+
+{% endblock %}

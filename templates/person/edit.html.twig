@@ -1,0 +1,16 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Személy szerkesztése{% endblock %}
+
+{% block body %}
+    <h1>Személy szerkesztése: {{ person.name }}</h1>
+
+    {{ form_start(form) }}
+    {{ form_widget(form) }}
+    <button class="btn btn-primary mt-2">Mentés</button>
+    {{ form_end(form) }}
+
+    <div class="mt-4">
+        <a href="{{ path('person_show', {'id': person.id}) }}" class="text-sm text-gray-600">Vissza a személyhez</a>
+    </div>
+{% endblock %}
