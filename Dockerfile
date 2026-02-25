@@ -1,14 +1,32 @@
 #syntax=docker/dockerfile:1
 
+# ──────────────────────────────────────────────────────────────────────────────
+# Stage 1: Node.js asset builder
+# Builds CSS/JS with Webpack Encore + TailwindCSS for production.
+# This stage is only used by frankenphp_prod; the result is copied in below.
+# ──────────────────────────────────────────────────────────────────────────────
+FROM node:22-alpine AS node_builder
+
+WORKDIR /app
+
+COPY package.json webpack.config.js tailwind.config.js postcss.config.js ./
+RUN npm install --no-progress --no-audit
+
+# Copy only what Tailwind and Webpack need to scan/bundle
+COPY assets/ assets/
+COPY templates/ templates/
+
+RUN npm run build
+
+
+# ──────────────────────────────────────────────────────────────────────────────
 # Versions
 FROM dunglas/frankenphp:1-php8.4 AS frankenphp_upstream
 
-# The different stages of this Dockerfile are meant to be built into separate images
-# https://docs.docker.com/develop/develop-images/multistage-build/#stop-at-a-specific-build-stage
-# https://docs.docker.com/compose/compose-file/#target
 
-
+# ──────────────────────────────────────────────────────────────────────────────
 # Base FrankenPHP image
+# ──────────────────────────────────────────────────────────────────────────────
 FROM frankenphp_upstream AS frankenphp_base
 
 WORKDIR /app
@@ -34,9 +52,7 @@ RUN set -eux; \
 # https://getcomposer.org/doc/03-cli.md#composer-allow-superuser
 ENV COMPOSER_ALLOW_SUPERUSER=1
 
-# Transport to use by Mercure (default to Bolt)
 ENV MERCURE_TRANSPORT_URL=bolt:///data/mercure.db
-
 ENV PHP_INI_SCAN_DIR=":$PHP_INI_DIR/app.conf.d"
 
 ###> recipes ###
@@ -54,7 +70,12 @@ ENTRYPOINT ["docker-entrypoint"]
 HEALTHCHECK --start-period=60s CMD curl -f http://localhost:2019/metrics || exit 1
 CMD [ "frankenphp", "run", "--config", "/etc/frankenphp/Caddyfile" ]
 
+
+# ──────────────────────────────────────────────────────────────────────────────
 # Dev FrankenPHP image
+# Includes Node.js so you can run `npm run watch` inside the container.
+# Assets are built automatically on first start via docker-entrypoint.sh.
+# ──────────────────────────────────────────────────────────────────────────────
 FROM frankenphp_base AS frankenphp_dev
 
 ENV APP_ENV=dev
@@ -68,11 +89,20 @@ RUN set -eux; \
 		xdebug \
 	;
 
+# Install Node.js (LTS) for frontend asset development
+RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
+    && apt-get install -y --no-install-recommends nodejs \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY --link frankenphp/conf.d/20-app.dev.ini $PHP_INI_DIR/app.conf.d/
 
 CMD [ "frankenphp", "run", "--config", "/etc/frankenphp/Caddyfile", "--watch" ]
 
+
+# ──────────────────────────────────────────────────────────────────────────────
 # Prod FrankenPHP image
+# Assets are pre-built by node_builder and copied in — Node.js is NOT included.
+# ──────────────────────────────────────────────────────────────────────────────
 FROM frankenphp_base AS frankenphp_prod
 
 ENV APP_ENV=prod
@@ -89,6 +119,9 @@ RUN set -eux; \
 # copy sources
 COPY --link . ./
 RUN rm -Rf frankenphp/
+
+# Copy pre-built frontend assets from the node_builder stage (no Node.js in prod image)
+COPY --from=node_builder /app/public/build /app/public/build
 
 RUN set -eux; \
 	mkdir -p var/cache var/log; \

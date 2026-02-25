@@ -26,6 +26,18 @@ if [ "$1" = 'frankenphp' ] || [ "$1" = 'php' ] || [ "$1" = 'bin/console' ]; then
 		composer install --prefer-dist --no-progress --no-interaction
 	fi
 
+	# Install and build frontend assets automatically in dev (Node.js is available in dev image)
+	if [ "$APP_ENV" = 'dev' ] && [ -f package.json ] && command -v npm > /dev/null 2>&1; then
+		if [ ! -d node_modules ]; then
+			echo 'Installing npm dependencies...'
+			npm install --no-progress --no-audit
+		fi
+		if [ ! -d public/build ] || [ -z "$(ls -A 'public/build/' 2>/dev/null)" ]; then
+			echo 'Building frontend assets...'
+			npm run dev
+		fi
+	fi
+
 	# Display information about the current project
 	# Or about an error in project initialization
 	php bin/console -V

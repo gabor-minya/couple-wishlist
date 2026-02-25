@@ -1,22 +1,33 @@
 {% extends 'base.html.twig' %}
-
-{% block title %}Add Item — Wishlist{% endblock %}
+{% block title %}{{ 'page.add_person'|trans }} — {{ 'app.name'|trans }}{% endblock %}
 
 {% block body %}
-    <div class="mb-4">
-        <h1 class="text-2xl font-bold">Add new person</h1>
-    </div>
+    <div class="max-w-lg">
+        <div class="mb-6">
+            <a href="{{ path('dashboard') }}"
+               class="text-sm text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-400 transition">{{ 'btn.back_to_dashboard'|trans }}</a>
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-2">{{ 'page.add_person'|trans }}</h1>
+        </div>
 
-    <div class="bg-white shadow rounded p-6 max-w-xl">
-        {{ form_start(form) }}
-        <div class="mb-4">
-            {{ form_label(form.name) }}
-            {{ form_widget(form.name, {'attr': {'class': 'w-full border rounded px-3 py-2'}}) }}
-            {{ form_errors(form.name) }}
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
+            {{ form_start(form) }}
+
+            <div class="mb-5">
+                {{ form_label(form.name, null, {'label_attr': {'class': 'block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1.5'}}) }}
+                {{ form_widget(form.name, {'attr': {'class': 'w-full border border-gray-200 dark:border-gray-600 rounded-xl px-3 py-2.5 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition'}}) }}
+                {{ form_errors(form.name) }}
+            </div>
+
+            <div class="flex justify-end gap-3 pt-2">
+                <a href="{{ path('dashboard') }}"
+                   class="px-4 py-2 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition">{{ 'btn.cancel'|trans }}</a>
+                <button type="submit"
+                        class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2 rounded-xl transition text-sm font-semibold shadow-sm">
+                    {{ 'btn.add_person'|trans }}
+                </button>
+            </div>
+
+            {{ form_end(form) }}
         </div>
-        <div class="flex justify-end">
-            <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Add Person</button>
-        </div>
-        {{ form_end(form) }}
     </div>
 {% endblock %}

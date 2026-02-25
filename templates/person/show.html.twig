@@ -1,79 +1,149 @@
 {% extends 'base.html.twig' %}
-{% block title %}{{ person.name }} — Wishlist{% endblock %}
+{% block title %}{{ person.name }} — {{ 'app.name'|trans }}{% endblock %}
 
 {% block body %}
-    <div class="mb-4">
-        <h1 class="text-2xl font-bold">{{ person.name }}</h1>
-        {% if person.isOnHold %}
-            <div class="mt-3 p-3 bg-yellow-50 border-l-4 border-yellow-300 text-yellow-800 rounded">
-                This person's wishlist is currently ON HOLD — do not buy anything right now.
+    {# ── Header ── #}
+    <div class="flex flex-wrap items-start justify-between gap-4 mb-6">
+        <div>
+            <a href="{{ path('dashboard') }}"
+               class="text-sm text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-400 transition">{{ 'btn.back_to_dashboard'|trans }}</a>
+            <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100 mt-1">{{ person.name }}</h1>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+            <a href="{{ path('person_item_new', {'id': person.id}) }}"
+               class="inline-flex items-center gap-1 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl transition text-sm font-semibold shadow-sm">
+                {{ 'btn.add_item'|trans }}
+            </a>
+            <form action="{{ path('person_toggle_hold', {'id': person.id}) }}" method="post">
+                <input type="hidden" name="_token" value="{{ csrf_token('toggle-hold' ~ person.id) }}">
+                <button type="submit"
+                        class="inline-flex items-center px-4 py-2 rounded-xl border text-sm font-medium transition
+                               {% if person.isOnHold %}
+                                   bg-amber-50 dark:bg-amber-900/20 border-amber-300 dark:border-amber-700 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/40
+                               {% else %}
+                                   bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700
+                               {% endif %}">
+                    {{ person.isOnHold ? 'btn.unfreeze'|trans : 'btn.freeze'|trans }}
+                </button>
+            </form>
+            <a href="{{ path('person_trash', {'id': person.id}) }}"
+               class="inline-flex items-center px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+                {{ 'trash.title'|trans }}
+            </a>
+            <a href="{{ path('person_edit', {'id': person.id}) }}"
+               class="inline-flex items-center px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+                {{ 'btn.edit'|trans }}
+            </a>
+        </div>
+    </div>
+
+    {# ── On-Hold Warning ── #}
+    {% if person.isOnHold %}
+        <div class="mb-6 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/50 rounded-2xl flex items-start gap-3">
+            <svg class="h-5 w-5 text-amber-500 dark:text-amber-400 shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+            </svg>
+            <div>
+                <p class="font-semibold text-amber-800 dark:text-amber-200">{{ 'hold.title'|trans }}</p>
+                <p class="text-amber-700 dark:text-amber-300 text-sm mt-0.5">{{ 'hold.message'|trans }}</p>
             </div>
-        {% endif %}
-    </div>
+        </div>
+    {% endif %}
 
-    <div class="mb-4 flex justify-between items-center">
-        <div>
-            <a href="{{ path('person_add_item', {'id': person.id}) }}" class="bg-green-600 text-white px-3 py-2 rounded">Add item</a>
-            <a href="{{ path('person_trash', {'id': person.id}) }}" class="ml-2 text-sm text-red-600">Trash</a>
+    {# ── Items Grid ── #}
+    {% if items is empty %}
+        <div class="text-center py-20 bg-white dark:bg-gray-900 rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-700">
+            <svg class="mx-auto h-10 w-10 text-gray-300 dark:text-gray-600 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4v16m8-8H4"/>
+            </svg>
+            <p class="text-gray-400 dark:text-gray-500 font-medium">{{ 'person.no_items'|trans }}</p>
+            <a href="{{ path('person_item_new', {'id': person.id}) }}"
+               class="mt-3 inline-block text-indigo-600 dark:text-indigo-400 font-semibold text-sm hover:underline">
+                {{ 'person.add_first_item'|trans }}
+            </a>
+        </div>
+    {% else %}
+        <div class="flex items-center justify-between mb-4">
+            <p class="text-sm text-gray-400 dark:text-gray-500">
+                {{ 'person.items_count'|trans({'%count%': items|length}) }}
+            </p>
+            <button id="toggleView"
+                    class="text-xs px-3 py-1.5 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+                {{ 'btn.toggle_view'|trans }}
+            </button>
         </div>
 
-        <div>
-            <button id="toggleView" class="text-sm px-3 py-2 border rounded">Toggle view</button>
-        </div>
-    </div>
-
-    <div id="itemsGrid" class="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
-        {% set hasItems = false %}
-        {% for item in person.items %}
-            {% if item.deletedAt is null %}
-                {% set hasItems = true %}
-                <div class="bg-white rounded-lg shadow p-4 flex flex-col">
+        <div id="itemsGrid" class="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+            {% for item in items %}
+                <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col overflow-hidden hover:shadow-md transition-all duration-200">
                     {% if item.imageUrl %}
-                        <img src="{{ item.imageUrl }}" alt="{{ item.name }}" class="h-40 w-full object-cover rounded mb-3">
+                        <img src="{{ item.imageUrl }}"
+                             alt="{{ item.name }}"
+                             class="h-48 w-full object-cover">
                     {% endif %}
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <h3 class="font-semibold">{{ item.name }}</h3>
-                            <div class="text-sm text-gray-500">{{ item.note }}</div>
+
+                    <div class="p-4 flex flex-col flex-1">
+                        <div class="flex items-start justify-between gap-2 mb-2">
+                            <h3 class="font-semibold text-gray-900 dark:text-gray-100 leading-snug">
+                                {% if item.url %}
+                                    <a href="{{ item.url }}" target="_blank" rel="noopener"
+                                       class="hover:text-indigo-600 dark:hover:text-indigo-400 transition">{{ item.name }}</a>
+                                {% else %}
+                                    {{ item.name }}
+                                {% endif %}
+                            </h3>
+                            <span class="shrink-0 text-xs font-semibold px-2 py-0.5 rounded-full
+                                {% if item.priority == 'high' %}bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300
+                                {% elseif item.priority == 'medium' %}bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300
+                                {% else %}bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300{% endif %}">
+                                {{ ('priority.' ~ item.priority)|trans }}
+                            </span>
                         </div>
-                        <div class="text-right">
-                            {% if item.price %}
-                                <div class="font-medium">{{ item.price }} {{ item.currency|default('USD') }}</div>
-                            {% endif %}
-                            <div class="text-xs mt-1">
-                                <span class="px-2 py-1 rounded text-white text-xs
-                                  {% if item.priority == 'high' %}bg-red-500{% elseif item.priority == 'medium' %}bg-yellow-500{% elseif item.priority == 'low' %}bg-green-500{% else %}bg-gray-400{% endif %}">
-                                  {{ item.priority|capitalize }}
-                                </span>
+
+                        {% if item.note %}
+                            <p class="text-sm text-gray-500 dark:text-gray-400 mb-3 leading-relaxed">{{ item.note|autolink }}</p>
+                        {% endif %}
+
+                        {% if item.price %}
+                            <p class="text-base font-bold text-gray-800 dark:text-gray-200 mb-1">
+                                {{ item.price }} {{ item.currency }}
+                            </p>
+                        {% endif %}
+
+                        <div class="mt-auto pt-3 border-t border-gray-100 dark:border-gray-700 flex items-center justify-between">
+                            <span class="text-xs text-gray-400 dark:text-gray-500">{{ item.addedAt|date('Y.m.d') }}</span>
+                            <div class="flex items-center gap-3">
+                                <a href="{{ path('item_edit', {'id': item.id}) }}"
+                                   class="text-xs font-medium text-indigo-500 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition">
+                                    {{ 'btn.edit'|trans }}
+                                </a>
+                                <form action="{{ path('item_delete', {'id': item.id}) }}" method="post"
+                                      onsubmit="return confirm('{{ 'confirm.delete_item'|trans|escape('js') }}')">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('delete-item' ~ item.id) }}">
+                                    <button type="submit"
+                                            class="text-xs font-medium text-red-400 dark:text-red-400 hover:text-red-600 dark:hover:text-red-300 transition">
+                                        {{ 'btn.delete'|trans }}
+                                    </button>
+                                </form>
                             </div>
                         </div>
                     </div>
-
-                    <div class="mt-3 flex justify-between items-center">
-                        <div class="text-sm text-gray-500">{{ item.addedAt|date('Y.m.d') }}</div>
-                        <div class="flex items-center gap-2">
-                            <a href="{{ path('item_edit', {'id': item.id}) }}" class="text-sm text-indigo-600">Edit</a>
-                            <form action="{{ path('item_delete', {'id': item.id}) }}" method="post" class="inline">
-                                <input type="hidden" name="_token" value="{{ csrf_token('delete-item' ~ item.id) }}">
-                                <button type="submit" class="text-sm text-red-600">Delete</button>
-                            </form>
-                        </div>
-                    </div>
                 </div>
-            {% endif %}
-        {% endfor %}
+            {% endfor %}
+        </div>
+    {% endif %}
+{% endblock %}
 
-        {% if not hasItems %}
-            <p>No items yet.</p>
-        {% endif %}
-    </div>
-
-    <script>
-        document.getElementById('toggleView').addEventListener('click', function(){
-            const grid = document.getElementById('itemsGrid');
-            grid.classList.toggle('grid-cols-1');
-            grid.classList.toggle('grid-cols-3');
+{% block javascripts %}
+<script>
+    const btn  = document.getElementById('toggleView');
+    const grid = document.getElementById('itemsGrid');
+    if (btn && grid) {
+        btn.addEventListener('click', () => {
+            const multi = grid.classList.contains('lg:grid-cols-3');
+            grid.classList.toggle('sm:grid-cols-2', !multi);
+            grid.classList.toggle('lg:grid-cols-3', !multi);
         });
-    </script>
-
+    }
+</script>
 {% endblock %}
